@@ -34,6 +34,7 @@
 	body_parts_covered = CHEST|GROIN|ARMS
 	can_adjust = FALSE
 	fitted = FEMALE_UNIFORM_TOP
+	mutantrace_variation = NO_MUTANTRACE_VARIATION
 
 /obj/item/clothing/under/rank/cargo/miner
 	desc = "It's a snappy jumpsuit with a sturdy set of overalls. It is very dirty."
@@ -48,4 +49,12 @@
 	icon_state = "explorer"
 	item_state = "explorer"
 	item_color = "explorer"
+	can_adjust = FALSE
+
+/obj/item/clothing/under/rank/cargo/exploration
+	name = "exploration uniform"
+	desc = "A robust uniform used by exploration teams."
+	icon_state = "curator"
+	item_state = "curator"
+	item_color = "curator"
 	can_adjust = FALSE

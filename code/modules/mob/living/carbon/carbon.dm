@@ -69,10 +69,31 @@
 	return ..()
 
 /mob/living/carbon/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatum)
-	. = ..()
 	var/hurt = TRUE
 	if(throwingdatum.force <= MOVE_FORCE_WEAK)
 		hurt = FALSE
+
+	if(iscarbon(hit_atom) && hit_atom != src)
+		var/mob/living/carbon/victim = hit_atom
+		if(!(victim.movement_type & FLYING))
+			if(victim.can_catch_item())
+				visible_message("<span class='danger'>[victim] catches [src]!</span>",\
+					"<span class='userdanger'>[victim] catches you!</span>")
+				grabbedby(victim, TRUE)
+				victim.throw_mode_off()
+				log_combat(victim, src, "caught (thrown mob)")
+				return
+			if(hurt)
+				victim.take_bodypart_damage(10,check_armor = TRUE)
+				take_bodypart_damage(10,check_armor = TRUE)
+				victim.Paralyze(20)
+				Paralyze(20)
+				visible_message("<span class='danger'>[src] crashes into [victim], knocking them both over!</span>",\
+					"<span class='userdanger'>You violently crash into [victim]!</span>")
+			playsound(src,'sound/weapons/punch1.ogg',50,1)
+
+	. = ..()
+
 	if(istype(throwingdatum, /datum/thrownthing))
 		var/datum/thrownthing/D = throwingdatum
 		if(iscyborg(D.thrower))
@@ -83,23 +104,10 @@
 		if(hurt)
 			Paralyze(20)
 			take_bodypart_damage(10,check_armor = TRUE)
-	if(iscarbon(hit_atom) && hit_atom != src)
-		var/mob/living/carbon/victim = hit_atom
-		if(victim.movement_type & FLYING)
-			return
-		if(hurt)
-			victim.take_bodypart_damage(10,check_armor = TRUE)
-			take_bodypart_damage(10,check_armor = TRUE)
-			victim.Paralyze(20)
-			Paralyze(20)
-			visible_message("<span class='danger'>[src] crashes into [victim], knocking them both over!</span>",\
-				"<span class='userdanger'>You violently crash into [victim]!</span>")
-		playsound(src,'sound/weapons/punch1.ogg',50,1)
-
 
 //Throwing stuff
 /mob/living/carbon/proc/toggle_throw_mode()
-	if(stat >= SOFT_CRIT)
+	if(stat)
 		return
 	if(in_throw_mode)
 		throw_mode_off()
@@ -120,6 +128,7 @@
 
 /mob/proc/throw_item(atom/target)
 	SEND_SIGNAL(src, COMSIG_MOB_THROW, target)
+	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_CARBON_THROW_THING, src, target)
 	return TRUE
 
 /mob/living/carbon/throw_item(atom/target)
@@ -523,8 +532,6 @@
 		add_movespeed_modifier(MOVESPEED_ID_CARBON_CRAWLING, TRUE, multiplicative_slowdown = CRAWLING_ADD_SLOWDOWN)
 	else
 		remove_movespeed_modifier(MOVESPEED_ID_CARBON_CRAWLING, TRUE)
-	if(buckled || pulledby)
-		return
 
 //Updates the mob's health from bodyparts and mob damage variables
 /mob/living/carbon/updatehealth()
@@ -650,7 +657,7 @@
 	if(health <= crit_threshold)
 		var/severity = 0
 		switch(health)
-			if(-20 to 0)
+			if(-20 to -10)
 				severity = 1
 			if(-30 to -20)
 				severity = 2
@@ -781,56 +788,15 @@
 				REMOVE_TRAIT(src, TRAIT_SIXTHSENSE, "near-death")
 		else
 			if(health <= crit_threshold && !HAS_TRAIT(src, TRAIT_NOSOFTCRIT))
-				// Slower glide movement handled in update_mobility()
-				//Knockdown at the start of critical status.
-				if(stat != SOFT_CRIT)
-					Knockdown(40, TRUE, TRUE)
 				set_stat(SOFT_CRIT)
-				stuttering = 10
 			else
 				set_stat(CONSCIOUS)
-				stuttering = 0
 			adjust_blindness(-1)
 			REMOVE_TRAIT(src, TRAIT_SIXTHSENSE, "near-death")
 		update_mobility()
 	update_damage_hud()
 	update_health_hud()
 	med_hud_set_status()
-
-/// Allows mobs to slowly walk in crit for a short time
-/mob/living/carbon/proc/softcrit_damage()
-	if(stat == SOFT_CRIT)
-		var/duration = 0
-		switch(health)
-			if(HEALTH_THRESHOLD_FULLCRIT to -30)
-				if(prob(25 * crit_weight))
-					duration = 60
-
-				if(prob(30 * crit_weight))
-					INVOKE_ASYNC(src, /mob.proc/emote, "gasp")
-			if(-30 to -20)
-				if(prob(20 * crit_weight))
-					duration = 60
-
-				if(prob(25 * crit_weight))
-					INVOKE_ASYNC(src, /mob.proc/emote, "gasp")
-			if(-20 to -10)
-				if(prob(15 * crit_weight))
-					duration = 40
-
-				if(prob(20 * crit_weight))
-					INVOKE_ASYNC(src, /mob.proc/emote, "cough")
-			if(-10 to HEALTH_THRESHOLD_CRIT)
-				if(prob(15 * crit_weight))
-					duration = 20
-
-				if(prob(20 * crit_weight))
-					INVOKE_ASYNC(src, /mob.proc/emote, "cough")
-		if(duration)
-			crit_weight = initial(crit_weight) // reset our crit chance multiplier
-			AdjustKnockdown(rand(duration, duration * 2), ignore_canstun = TRUE)
-		else
-			crit_weight += 0.2
 
 //called when we get cuffed/uncuffed
 /mob/living/carbon/proc/update_handcuffed()
@@ -926,16 +892,6 @@
 			r_arm_index_next += 2
 			O.held_index = r_arm_index_next //2, 4, 6, 8...
 			hand_bodyparts += O
-
-/mob/living/carbon/do_after_coefficent()
-	. = ..()
-	var/datum/component/mood/mood = src.GetComponent(/datum/component/mood) //Currently, only carbons or higher use mood, move this once that changes.
-	if(mood)
-		switch(mood.sanity) //Alters do_after delay based on how sane you are
-			if(-INFINITY to SANITY_DISTURBED)
-				. *= 1.25
-			if(SANITY_NEUTRAL to INFINITY)
-				. *= 0.90
 
 /mob/living/carbon/proc/create_internal_organs()
 	for(var/X in internal_organs)

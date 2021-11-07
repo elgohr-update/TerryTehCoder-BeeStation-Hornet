@@ -69,10 +69,12 @@
 	..()
 
 /mob/living/carbon/alien/humanoid/royal/queen/proc/game_end()
-	if(stat != DEAD)
+	var/turf/T = get_turf(src)
+	if(stat != DEAD && is_station_level(T.z))
 		SSshuttle.clearHostileEnvironment(src)
 		if(EMERGENCY_IDLE_OR_RECALLED)
-			priority_announce("Xenomorph infestation detected: crisis shuttle protocols activated - jamming recall signals across all frequencies.")
+			priority_announce("Xenomorph infestation detected: crisis shuttle protocols activated - jamming recall signals across all frequencies.", SSstation.announcer.get_rand_alert_sound())
+			play_soundtrack_music(/datum/soundtrack_song/bee/mind_crawler, only_station = TRUE)
 			SSshuttle.emergency.request(null, set_coefficient=0.5)
 			SSshuttle.emergencyNoRecall = TRUE
 
@@ -166,7 +168,7 @@
 		qdel(src)
 		return
 	else
-		to_chat(user, "<span class='warning'>This child must be fully alert and responsive to become a Praetorian!</span>")
+		to_chat(user, "<span class='warning'>This child must be alert and responsive to become a Praetorian!</span>")
 
 /obj/item/queenpromote/attack_self(mob/user)
 	to_chat(user, "<span class='noticealien'>You discard [src].</span>")

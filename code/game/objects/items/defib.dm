@@ -278,6 +278,11 @@
 
 //paddles
 
+///What caused the paddles to snap back?
+#define SNAP_DROP       0
+#define SNAP_OVEREXTEND 1
+#define SNAP_INTERACT   2
+
 /obj/item/shockpaddles
 	name = "defibrillator paddles"
 	desc = "A pair of plastic-gripped paddles with flat metal surfaces that are used to deliver powerful electric shocks."
@@ -311,21 +316,23 @@
 
 /obj/item/shockpaddles/Destroy()
 	defib = null
+	listeningTo = null
 	return ..()
 
 /obj/item/shockpaddles/equipped(mob/user, slot)
 	. = ..()
-	if(!req_defib || listeningTo == user)
+	if(!req_defib)
 		return
-	if(listeningTo)
+	if(listeningTo && listeningTo != user)
 		UnregisterSignal(listeningTo, COMSIG_MOVABLE_MOVED)
 	RegisterSignal(user, COMSIG_MOVABLE_MOVED, .proc/check_range)
 	listeningTo = user
+	check_range()
 
 /obj/item/shockpaddles/Moved()
 	. = ..()
-	check_range()
-
+	if(!istype(loc, /mob/living))
+		check_range()
 
 /obj/item/shockpaddles/fire_act(exposed_temperature, exposed_volume)
 	. = ..()
@@ -333,15 +340,15 @@
 		defib.fire_act(exposed_temperature, exposed_volume)
 
 /obj/item/shockpaddles/proc/check_range()
+	SIGNAL_HANDLER
+
 	if(!req_defib || !defib)
 		return
 	if(!in_range(src,defib))
 		var/mob/living/L = loc
 		if(istype(L))
-			to_chat(L, "<span class='warning'>[defib]'s paddles overextend and come out of your hands!</span>")
-			L.temporarilyRemoveItemFromInventory(src,TRUE)
+			snap_back(cause=SNAP_OVEREXTEND)
 		else
-			visible_message("<span class='notice'>[src] snap back into [defib].</span>")
 			snap_back()
 
 /obj/item/shockpaddles/proc/recharge(var/time)
@@ -356,13 +363,16 @@
 	cooldown = FALSE
 	update_icon()
 
-/obj/item/shockpaddles/New(mainunit)
-	..()
-	if(check_defib_exists(mainunit, src) && req_defib)
-		defib = mainunit
-		forceMove(defib)
-		busy = FALSE
-		update_icon()
+/obj/item/shockpaddles/Initialize()
+	. = ..()
+	ADD_TRAIT(src, TRAIT_NO_STORAGE_INSERT, GENERIC_ITEM_TRAIT) //stops shockpaddles from being inserted in BoH
+	if(!req_defib)
+		return //If it doesn't need a defib, just say it exists
+	if (!loc || !istype(loc, /obj/item/defibrillator)) //To avoid weird issues from admin spawns
+		return INITIALIZE_HINT_QDEL
+	defib = loc
+	busy = FALSE
+	update_icon()
 
 /obj/item/shockpaddles/update_icon()
 	var/wielded = ISWIELDED(src)
@@ -388,26 +398,33 @@
 		UnregisterSignal(listeningTo, COMSIG_MOVABLE_MOVED)
 	if(user)
 		UnregisterSignal(user, COMSIG_MOVABLE_MOVED)
-		if(user != loc)
-			to_chat(user, "<span class='notice'>The paddles snap back into the main unit.</span>")
+		if(!ismob(loc))
 			snap_back()
 	return
 
-/obj/item/shockpaddles/proc/snap_back()
+/obj/item/shockpaddles/proc/snap_back(cause=SNAP_DROP, silent=FALSE)
 	if(!defib)
 		return
-	defib.on = FALSE
-	forceMove(defib)
-	defib.update_icon()
 
-/obj/item/shockpaddles/proc/check_defib_exists(mainunit, mob/living/carbon/M, obj/O)
-	if(!req_defib)
-		return TRUE //If it doesn't need a defib, just say it exists
-	if (!mainunit || !istype(mainunit, /obj/item/defibrillator))	//To avoid weird issues from admin spawns
-		qdel(O)
-		return FALSE
+	if(ismob(loc))
+		var/mob/M = loc
+		M.transferItemToLoc(src, defib)
+		if(!silent)
+			switch(cause)
+				if(SNAP_DROP)
+					to_chat(M, "<span class='notice'>The paddles snap back into the main unit.</span>")
+				if(SNAP_OVEREXTEND)
+					to_chat(M, "<span class='warning'>[defib]'s paddles overextend and come out of your hands!</span>")
+				if(SNAP_INTERACT)
+					to_chat(M, "<span class='notice'>You put back [src] into [defib]</span>")
 	else
-		return TRUE
+		if(!silent)
+			visible_message("<span class='notice'>[src] snaps back into [defib].</span>")
+		forceMove(defib)
+
+	defib.on = FALSE
+	listeningTo = null
+	defib.update_icon()
 
 /obj/item/shockpaddles/attack(mob/M, mob/user)
 	if(busy)
@@ -541,7 +558,7 @@
 			H.emote("scream")
 			shock_touching(45, H)
 			if(H.can_heartattack() && !H.undergoing_cardiac_arrest())
-				if(H.is_conscious())
+				if(!H.stat)
 					H.visible_message("<span class='warning'>[H] thrashes wildly, clutching at [H.p_their()] chest!</span>",
 						"<span class='userdanger'>You feel a horrible agony in your chest!</span>")
 				H.set_heartattack(TRUE)
@@ -693,5 +710,9 @@
 
 /obj/item/shockpaddles/syndicate/cyborg
 	req_defib = FALSE
+
+#undef SNAP_DROP
+#undef SNAP_OVEREXTEND
+#undef SNAP_INTERACT
 
 #undef HALFWAYCRITDEATH

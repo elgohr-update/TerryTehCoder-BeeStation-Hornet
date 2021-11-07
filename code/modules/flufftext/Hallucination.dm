@@ -31,6 +31,11 @@ GLOBAL_LIST_INIT(hallucination_list, list(
 
 	hallucination--
 
+	//This system used to shit bricks with decimal values. Fuck it.
+	if(hallucination <= 0)
+		hallucination = 0
+		return
+
 	if(world.time < next_hallucination)
 		return
 
@@ -706,7 +711,7 @@ GLOBAL_LIST_INIT(hallucination_list, list(
 		var/image/speech_overlay = image('icons/mob/talk.dmi', person, "default0", layer = ABOVE_MOB_LAYER)
 		INVOKE_ASYNC(GLOBAL_PROC, /proc/flick_overlay, speech_overlay, list(target.client), 30)
 	if (target.client?.prefs.chat_on_map)
-		target.create_chat_message(person, understood_language, chosen, spans)
+		create_chat_message(person, understood_language, list(target), chosen, spans)
 	to_chat(target, message)
 	qdel(src)
 

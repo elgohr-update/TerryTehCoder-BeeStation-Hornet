@@ -131,8 +131,8 @@
 	var/datum/effect_system/spark_spread/s = new /datum/effect_system/spark_spread
 	s.set_up(3, 1, src)
 	s.start()
-	mineEffect(victim)
 	triggered = 1
+	mineEffect(victim)
 	SEND_SIGNAL(src, COMSIG_MINE_TRIGGERED, victim)
 	qdel(src)
 
@@ -322,6 +322,8 @@
 	QDEL_IN(WEAKREF(src), duration)
 
 /obj/effect/mine/pickup/bloodbath/proc/end_blood_frenzy()
+	SIGNAL_HANDLER
+
 	if(doomslayer)
 		to_chat(doomslayer, "<span class='notice'>Your bloodlust seeps back into the bog of your subconscious and you regain self control.</span>")
 		doomslayer.log_message("exited a blood frenzy", LOG_ATTACK)

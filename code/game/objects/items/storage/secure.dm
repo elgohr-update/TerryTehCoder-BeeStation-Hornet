@@ -82,7 +82,7 @@
 
 /obj/item/storage/secure/Topic(href, href_list)
 	..()
-	if ((!usr.is_conscious() || usr.restrained()) || (get_dist(src, usr) > 1))
+	if ((usr.stat || usr.restrained()) || (get_dist(src, usr) > 1))
 		return
 	if (href_list["type"])
 		if (href_list["type"] == "E")
@@ -167,6 +167,7 @@
 	icon_sparking = "safespark"
 	desc = "Excellent for securing things away from grubby hands."
 	force = 8
+	layer = ABOVE_WINDOW_LAYER
 	w_class = WEIGHT_CLASS_GIGANTIC
 	anchored = TRUE
 	density = FALSE

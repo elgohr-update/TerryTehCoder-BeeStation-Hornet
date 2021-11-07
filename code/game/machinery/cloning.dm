@@ -119,6 +119,7 @@
 /obj/item/disk/data
 	name = "cloning data disk"
 	icon_state = "datadisk0" //Gosh I hope syndies don't mistake them for the nuke disk.
+	var/list/genetic_makeup_buffer = list()
 	var/list/fields = list()
 	var/list/mutations = list()
 	var/max_mutations = 6
@@ -138,6 +139,15 @@
 	. = ..()
 	. += "The write-protect tab is set to [read_only ? "protected" : "unprotected"]."
 
+/obj/item/disk/data/debug
+	name = "Debug genetic data disk"
+	desc = "A disk that contains all existing genetic mutations."
+	max_mutations = 100
+
+/obj/item/disk/data/debug/Initialize()
+	. = ..()
+	for(var/datum/mutation/human/HM as() in GLOB.all_mutations)
+		mutations += new HM
 
 //Clonepod
 
@@ -516,7 +526,7 @@
 	container_resist(user)
 
 /obj/machinery/clonepod/container_resist(mob/living/user)
-	if(user.is_conscious())
+	if(user.stat == CONSCIOUS)
 		go_out()
 
 /obj/machinery/clonepod/emp_act(severity)

@@ -45,9 +45,6 @@
 	if(owner.getStaminaLoss())
 		owner.adjustStaminaLoss(-0.3) //reduce stamina loss by 0.3 per tick, 6 per 2 seconds
 
-/datum/status_effect/incapacitating/unconscious/on_remove()
-	owner.update_mobility()
-
 //SLEEPING
 /datum/status_effect/incapacitating/sleeping
 	id = "sleeping"
@@ -567,14 +564,16 @@
 		owner.remove_client_colour(/datum/client_colour/monochrome)
 	to_chat(owner, "<span class='warning'>You snap out of your trance!</span>")
 
-/datum/status_effect/trance/proc/hypnotize(datum/source, message, atom/movable/speaker, message_language, raw_message, radio_freq, list/spans, list/message_mods = list())
+/datum/status_effect/trance/proc/hypnotize(datum/source, list/hearing_args, list/spans, list/message_mods = list())
+	SIGNAL_HANDLER
+
 	if(!owner.can_hear())
 		return
-	if(speaker == owner)
+	if(hearing_args[HEARING_SPEAKER] == owner)
 		return
 	var/mob/living/carbon/C = owner
 	C.cure_trauma_type(/datum/brain_trauma/hypnosis, TRAUMA_RESILIENCE_SURGERY) //clear previous hypnosis
-	addtimer(CALLBACK(C, /mob/living/carbon.proc/gain_trauma, /datum/brain_trauma/hypnosis, TRAUMA_RESILIENCE_SURGERY, raw_message), 10)
+	addtimer(CALLBACK(C, /mob/living/carbon.proc/gain_trauma, /datum/brain_trauma/hypnosis, TRAUMA_RESILIENCE_SURGERY, hearing_args[HEARING_RAW_MESSAGE]), 10)
 	addtimer(CALLBACK(C, /mob/living.proc/Stun, 60, TRUE, TRUE), 15) //Take some time to think about it
 	qdel(src)
 
@@ -917,3 +916,31 @@
 	name = "Flesh Servant"
 	desc = "You are a Ghoul! A eldritch monster reanimated to serve its master."
 	icon_state = "mind_control"
+
+/datum/status_effect/spanish
+	id = "spanish"
+	duration = 120 SECONDS
+	alert_type = null
+
+/datum/status_effect/spanish/on_apply(mob/living/new_owner, ...)
+	. = ..()
+	to_chat(owner, "<span class='warning'>Alert: Vocal cords are malfunctioning.</span>")
+	owner.add_blocked_language(subtypesof(/datum/language/) - /datum/language/uncommon, LANGUAGE_EMP)
+	owner.grant_language(/datum/language/uncommon, FALSE, TRUE, LANGUAGE_EMP)
+
+/datum/status_effect/spanish/on_remove()
+	owner.remove_blocked_language(subtypesof(/datum/language/), LANGUAGE_EMP)
+	owner.remove_language(/datum/language/uncommon, TRUE, TRUE, LANGUAGE_EMP)
+	to_chat(owner, "<span class='warning'>Alert: Vocal cords restored to normal function.</span>")
+	return ..()
+
+/datum/status_effect/ipc/emp
+	id = "ipc_emp"
+	examine_text = "<span class='warning'>SUBJECTPRONOUN is buzzing and twitching!</span>"
+	duration = 120 SECONDS
+	alert_type = /atom/movable/screen/alert/status_effect/emp
+	status_type = STATUS_EFFECT_REFRESH
+/atom/movable/screen/alert/status_effect/emp
+	name = "Electro-Magnetic Pulse"
+	desc = "You've been hit with an EMP! You're malfunctioning!"
+	icon_state = "hypnosis"
