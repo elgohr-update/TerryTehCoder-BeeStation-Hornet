@@ -359,7 +359,7 @@
 
 
 	if (client)
-		SSmedals.UnlockMedal(MEDAL_SINGULARITY_DEATH,client)
+		client.give_award(/datum/award/achievement/misc/singularity_death, client.mob)
 
 
 	investigate_log("([key_name(src)]) has been consumed by the singularity.", INVESTIGATE_ENGINES) //Oh that's where the clown ended up!
@@ -394,7 +394,7 @@
 
 //called when the mob receives a bright flash
 /mob/living/proc/flash_act(intensity = 1, override_blindness_check = 0, affect_silicon = 0, visual = 0, type = /atom/movable/screen/fullscreen/flash)
-	if(get_eye_protection() < intensity && (override_blindness_check || !(HAS_TRAIT(src, TRAIT_BLIND))))
+	if(get_eye_protection() < intensity && (override_blindness_check || !is_blind()))
 		overlay_fullscreen("flash", type)
 		addtimer(CALLBACK(src, .proc/clear_fullscreen, "flash", 25), 25)
 		return TRUE
@@ -424,3 +424,16 @@
 		return TRUE
 	else
 		return FALSE
+
+/mob/living/proc/sethellbound()
+	if(mind)
+		mind.hellbound = TRUE
+		med_hud_set_status()
+		return TRUE
+	return FALSE
+
+/mob/living/proc/ishellbound()
+	return mind?.hellbound
+
+/mob/living/proc/force_hit_projectile(obj/item/projectile/projectile)
+	return FALSE

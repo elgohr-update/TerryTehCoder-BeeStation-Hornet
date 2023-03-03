@@ -16,6 +16,7 @@
 	icon_dead = "towercap-dead"
 	genes = list(/datum/plant_gene/trait/plant_type/fungal_metabolism)
 	mutatelist = list(/obj/item/seeds/tower/steel)
+	reagents_add = list(/datum/reagent/carbon = 0.5)
 
 /obj/item/seeds/tower/steel
 	name = "pack of steel-cap mycelium"
@@ -25,6 +26,7 @@
 	plantname = "Steel Caps"
 	product = /obj/item/grown/log/steel
 	mutatelist = list()
+	reagents_add = list(/datum/reagent/iron = 0.2)
 	rarity = 20
 
 
@@ -36,13 +38,12 @@
 	desc = "It's better than bad, it's good!"
 	icon_state = "logs"
 	force = 5
-	block_upgrade_walk = 1
 	throwforce = 5
 	w_class = WEIGHT_CLASS_NORMAL
 	throw_speed = 2
 	throw_range = 3
 	attack_verb = list("bashed", "battered", "bludgeoned", "whacked")
-	var/plank_type = /obj/item/stack/sheet/mineral/wood
+	var/plank_type = /obj/item/stack/sheet/wood
 	var/plank_name = "wooden planks"
 	var/static/list/accepted = typecacheof(list(/obj/item/reagent_containers/food/snacks/grown/tobacco,
 	/obj/item/reagent_containers/food/snacks/grown/tea,
@@ -94,6 +95,7 @@
 	icon_state = "steellogs"
 	plank_type = /obj/item/stack/rods
 	plank_name = "rods"
+	discovery_points = 300
 
 /obj/item/grown/log/steel/CheckAccepted(obj/item/I)
 	return FALSE
@@ -112,7 +114,6 @@
 	potency = 50
 	growthstages = 3
 	growing_icon = 'icons/obj/hydroponics/growing.dmi'
-	icon_dead = "bamboo-dead"
 	genes = list(/datum/plant_gene/trait/repeated_harvest)
 
 /obj/item/grown/log/bamboo
@@ -120,8 +121,9 @@
 	name = "bamboo log"
 	desc = "A long and resistant bamboo log."
 	icon_state = "bamboo"
-	plank_type = /obj/item/stack/sheet/mineral/bamboo
+	plank_type = /obj/item/stack/sheet/bamboo
 	plank_name = "bamboo sticks"
+	discovery_points = 300
 
 /obj/item/grown/log/bamboo/CheckAccepted(obj/item/I)
 	return FALSE
@@ -167,7 +169,7 @@
 /obj/structure/bonfire/dense/askwalker
 	needs_oxygen = FALSE
 
-/obj/structure/bonfire/prelit/Initialize()
+/obj/structure/bonfire/prelit/Initialize(mapload)
 	. = ..()
 	StartBurning()
 
@@ -178,7 +180,7 @@
 		return TRUE
 	return ..()
 
-/obj/structure/bonfire/Initialize()
+/obj/structure/bonfire/Initialize(mapload)
 	. = ..()
 	var/static/list/loc_connections = list(
 		COMSIG_ATOM_ENTERED = .proc/on_entered,
@@ -249,6 +251,9 @@
 
 /obj/structure/bonfire/proc/StartBurning()
 	if(!burning && (!needs_oxygen || CheckOxygen()))
+		add_emitter(/obj/emitter/fire, "fire")
+		add_emitter(/obj/emitter/sparks/fire, "fire_spark")
+		add_emitter(/obj/emitter/fire_smoke, "smoke", 9)
 		icon_state = burn_icon
 		burning = TRUE
 		set_light(6)
@@ -302,6 +307,9 @@
 
 /obj/structure/bonfire/extinguish()
 	if(burning)
+		remove_emitter("fire")
+		remove_emitter("fire_spark")
+		remove_emitter("smoke")
 		icon_state = "bonfire"
 		burning = 0
 		set_light(0)

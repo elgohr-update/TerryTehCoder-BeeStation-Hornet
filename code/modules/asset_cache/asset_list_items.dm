@@ -1,11 +1,5 @@
 //DEFINITIONS FOR ASSET DATUMS START HERE.
 
-/datum/asset/simple/tgui_common
-	keep_local_name = TRUE
-	assets = list(
-		"tgui-common.bundle.js" = file("tgui/public/tgui-common.bundle.js"),
-	)
-
 /datum/asset/simple/tgui
 	keep_local_name = TRUE
 	assets = list(
@@ -48,6 +42,7 @@
 		"smmon_4.gif" = 'icons/program_icons/smmon_4.gif',
 		"smmon_5.gif" = 'icons/program_icons/smmon_5.gif',
 		"smmon_6.gif" = 'icons/program_icons/smmon_6.gif',
+		"borg_self_monitor.gif" = 'icons/program_icons/borg_self_monitor.gif'
 	)
 
 /datum/asset/simple/circuit_assets
@@ -196,6 +191,15 @@
 			Insert("language-[icon_state]", icon, icon_state=icon_state)
 	..()
 
+/datum/asset/spritesheet/emoji
+	name = "emoji"
+
+/datum/asset/spritesheet/emoji/register()
+	var/icon/I = icon('icons/emoji.dmi')
+	I.Scale(48, 48)
+	InsertAll("", I)
+	..()
+
 /datum/asset/simple/lobby
 	assets = list(
 		"playeroptions.css" = 'html/browser/playeroptions.css'
@@ -235,32 +239,32 @@
 		"boss6.gif" = 'icons/UI_Icons/Arcade/boss6.gif',
 		)
 
-/datum/asset/spritesheet/simple/pills
-	name ="pills"
+/datum/asset/spritesheet/simple/achievements
+	name ="achievements"
 	assets = list(
-		"pill1" = 'icons/UI_Icons/Pills/pill1.png',
-		"pill2" = 'icons/UI_Icons/Pills/pill2.png',
-		"pill3" = 'icons/UI_Icons/Pills/pill3.png',
-		"pill4" = 'icons/UI_Icons/Pills/pill4.png',
-		"pill5" = 'icons/UI_Icons/Pills/pill5.png',
-		"pill6" = 'icons/UI_Icons/Pills/pill6.png',
-		"pill7" = 'icons/UI_Icons/Pills/pill7.png',
-		"pill8" = 'icons/UI_Icons/Pills/pill8.png',
-		"pill9" = 'icons/UI_Icons/Pills/pill9.png',
-		"pill10" = 'icons/UI_Icons/Pills/pill10.png',
-		"pill11" = 'icons/UI_Icons/Pills/pill11.png',
-		"pill12" = 'icons/UI_Icons/Pills/pill12.png',
-		"pill13" = 'icons/UI_Icons/Pills/pill13.png',
-		"pill14" = 'icons/UI_Icons/Pills/pill14.png',
-		"pill15" = 'icons/UI_Icons/Pills/pill15.png',
-		"pill16" = 'icons/UI_Icons/Pills/pill16.png',
-		"pill17" = 'icons/UI_Icons/Pills/pill17.png',
-		"pill18" = 'icons/UI_Icons/Pills/pill18.png',
-		"pill19" = 'icons/UI_Icons/Pills/pill19.png',
-		"pill20" = 'icons/UI_Icons/Pills/pill20.png',
-		"pill21" = 'icons/UI_Icons/Pills/pill21.png',
-		"pill22" = 'icons/UI_Icons/Pills/pill22.png',
+		"default" = 'icons/UI_Icons/Achievements/default.png'
 	)
+
+/datum/asset/spritesheet/simple/medicine_containers
+	name ="medicine_containers"
+
+/datum/asset/spritesheet/simple/medicine_containers/register()
+	var/dmi_file = 'icons/obj/medicine_containers.dmi'
+	for(var/each_pill_shape in PILL_SHAPE_LIST_WITH_DUMMY)
+		var/icon/target_icon = icon(dmi_file, each_pill_shape, SOUTH, 1)
+		if(!target_icon)
+			continue
+		target_icon.Crop(11,10, 21,20)
+		target_icon.Scale(22, 22)
+		Insert(each_pill_shape, target_icon)
+	for(var/each_patch_shape in PATCH_SHAPE_LIST)
+		var/icon/target_icon = icon(dmi_file, each_patch_shape, SOUTH, 1)
+		if(!target_icon)
+			continue
+		target_icon.Crop(11,12, 21,22)
+		target_icon.Scale(22, 22)
+		Insert(each_patch_shape, target_icon)
+	return ..()
 
 //this exists purely to avoid meta by pre-loading all language icons.
 /datum/asset/language/register()
@@ -355,7 +359,14 @@
 				if (machine)
 					item = machine
 
-			icon_file = initial(item.icon)
+			// Check for GAGS support where necessary
+			var/greyscale_config = initial(item.greyscale_config)
+			var/greyscale_colors = initial(item.greyscale_colors)
+			if (greyscale_config && greyscale_colors)
+				icon_file = SSgreyscale.GetColoredIconByType(greyscale_config, greyscale_colors)
+			else
+				icon_file = initial(item.icon)
+
 			icon_state = initial(item.icon_state)
 
 			if(!(icon_state in icon_states(icon_file)))
@@ -386,7 +397,11 @@
 		if (!ispath(item, /atom))
 			continue
 
-		var/icon_file = initial(item.icon)
+		var/icon_file
+		if (initial(item.greyscale_colors) && initial(item.greyscale_config))
+			icon_file = SSgreyscale.GetColoredIconByType(initial(item.greyscale_config), initial(item.greyscale_colors))
+		else
+			icon_file = initial(item.icon)
 		var/icon_state = initial(item.icon_state)
 		var/icon/I
 
@@ -410,6 +425,7 @@
 
 		Insert(imgid, I)
 	return ..()
+
 /datum/asset/simple/bee_antags
 	assets = list(
 		"traitor.png" = 'html/img/traitor.png',
@@ -445,7 +461,12 @@
 		"mech.png" = 'html/img/mech.png',
 		"scitool.png" = 'html/img/scitool.png',
 		"alienorgan.png"= 'html/img/alienorgan.png',
-		"abaton.png"= 'html/img/abaton.png'
+		"spiderguard.png"= 'html/img/spiderguard.png',
+		"spiderbroodmother.png"= 'html/img/spiderbroodmother.png',
+		"spidernurse.png"= 'html/img/spidernurse.png',
+		"spiderhunter.png"= 'html/img/spiderhunter.png',
+		"spiderviper.png"= 'html/img/spiderviper.png',
+		"spidertarantula.png"= 'html/img/spidertarantula.png'
 	)
 
 /datum/asset/simple/orbit
@@ -462,7 +483,9 @@
 	name = "sheetmaterials"
 
 /datum/asset/spritesheet/sheetmaterials/register()
-	InsertAll("", 'icons/obj/stack_objects.dmi')
+	InsertAll("", 'icons/obj/stacks/minerals.dmi')//figure to do a list here
+//	InsertAll("", 'icons/obj/stacks/miscelaneous.dmi')
+//	InsertAll("", 'icons/obj/stacks/organic.dmi')
 
 	// Special case to handle Bluespace Crystals
 	Insert("polycrystal", 'icons/obj/telescience.dmi', "polycrystal")

@@ -44,10 +44,10 @@
 
 
 /datum/station_goal/dna_vault/on_report()
-	var/datum/supply_pack/P = SSshuttle.supply_packs[/datum/supply_pack/engineering/dna_vault]
+	var/datum/supply_pack/P = SSsupply.supply_packs[/datum/supply_pack/engineering/dna_vault]
 	P.special_enabled = TRUE
 
-	P = SSshuttle.supply_packs[/datum/supply_pack/engineering/dna_probes]
+	P = SSsupply.supply_packs[/datum/supply_pack/engineering/dna_probes]
 	P.special_enabled = TRUE
 
 /datum/station_goal/dna_vault/check_completion()
@@ -148,7 +148,7 @@
 
 	var/list/obj/structure/fillers = list()
 
-/obj/machinery/dna_vault/Initialize()
+/obj/machinery/dna_vault/Initialize(mapload)
 	//TODO: Replace this,bsa and gravgen with some big machinery datum
 	var/list/occupied = list()
 	for(var/direct in list(EAST,WEST,SOUTHEAST,SOUTHWEST))
@@ -280,7 +280,7 @@
 			ADD_TRAIT(H, TRAIT_PIERCEIMMUNE, "dna_vault")
 		if(VAULT_SPEED)
 			to_chat(H, "<span class='notice'>Your legs feel faster.</span>")
-			H.add_movespeed_modifier(MOVESPEED_ID_DNA_VAULT, update=TRUE, priority=100, multiplicative_slowdown=-1, blacklisted_movetypes=(FLYING|FLOATING))
+			H.add_movespeed_modifier(MOVESPEED_ID_DNA_VAULT, update=TRUE, priority=100, multiplicative_slowdown=-0.5, blacklisted_movetypes=(FLYING|FLOATING))
 		if(VAULT_QUICK)
 			to_chat(H, "<span class='notice'>Your arms move as fast as lightning.</span>")
 			H.next_move_modifier = 0.5

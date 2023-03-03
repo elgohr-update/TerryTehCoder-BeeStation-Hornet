@@ -14,7 +14,7 @@ Stabilized extracts:
 	var/datum/status_effect/linked_effect
 	var/mob/living/owner
 
-/obj/item/slimecross/stabilized/Initialize()
+/obj/item/slimecross/stabilized/Initialize(mapload)
 	. = ..()
 	START_PROCESSING(SSobj,src)
 
@@ -129,7 +129,7 @@ Stabilized extracts:
 					mob_spawn_pets += T
 	mob_type = pick(mob_spawn_pets)
 
-/obj/item/slimecross/stabilized/gold/Initialize()
+/obj/item/slimecross/stabilized/gold/Initialize(mapload)
 	. = ..()
 	generate_mobtype()
 
@@ -162,6 +162,7 @@ Stabilized extracts:
 /obj/item/slimecross/stabilized/oil
 	colour = "oil"
 	effect_desc = "The owner will violently explode when they die while holding this extract."
+	dangerous = TRUE
 
 /obj/item/slimecross/stabilized/black
 	colour = "black"

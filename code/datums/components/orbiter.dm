@@ -17,15 +17,11 @@
 
 	begin_orbit(orbiter, radius, clockwise, rotation_speed, rotation_segments, pre_rotation)
 
-/datum/component/orbiter/PostTransfer()
-	if(!isatom(parent) || isarea(parent))
-		return COMPONENT_INCOMPATIBLE
-
 /datum/component/orbiter/RegisterWithParent()
 	var/atom/target = parent
 
 	target.orbiters = src
-	if(ismovableatom(target))
+	if(ismovable(target))
 		tracker = new(target, CALLBACK(src, .proc/move_react))
 
 /datum/component/orbiter/UnregisterFromParent()
@@ -35,7 +31,8 @@
 
 /datum/component/orbiter/Destroy()
 	var/atom/master = parent
-	master.orbiters = null
+	if(master?.orbiters == src)
+		master.orbiters = null
 	for(var/i in orbiters)
 		end_orbit(i)
 	orbiters = null
@@ -46,12 +43,19 @@
 		begin_orbit(arglist(args.Copy(3)))
 		return
 	// The following only happens on component transfers
+	for(var/o in newcomp.orbiters)
+		var/atom/movable/incoming_orbiter = o
+		incoming_orbiter.orbiting = src
+		// It is important to transfer the signals so we don't get locked to the new orbiter component for all time
+		newcomp.UnregisterSignal(incoming_orbiter, COMSIG_MOVABLE_MOVED)
+		RegisterSignal(incoming_orbiter, COMSIG_MOVABLE_MOVED, .proc/orbiter_move_react)
 	orbiters += newcomp.orbiters
+	newcomp.orbiters = null
 
 /datum/component/orbiter/PostTransfer()
 	if(!isatom(parent) || isarea(parent) || !get_turf(parent))
 		return COMPONENT_INCOMPATIBLE
-	move_react()
+	move_react(parent)
 
 /datum/component/orbiter/proc/begin_orbit(atom/movable/orbiter, radius, clockwise, rotation_speed, rotation_segments, pre_rotation)
 	if(orbiter.orbiting)

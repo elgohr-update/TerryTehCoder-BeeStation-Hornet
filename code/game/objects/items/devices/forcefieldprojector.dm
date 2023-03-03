@@ -80,7 +80,7 @@
 	icon_state = "forcefield"
 	layer = ABOVE_ALL_MOB_LAYER
 	anchored = TRUE
-	pass_flags_self = PASSGLASS
+	pass_flags_self = PASSTRANSPARENT
 	density = TRUE
 	mouse_opacity = MOUSE_OPACITY_OPAQUE
 	resistance_flags = INDESTRUCTIBLE
@@ -95,7 +95,7 @@
 /obj/structure/projected_forcefield/Destroy()
 	visible_message("<span class='warning'>[src] flickers and disappears!</span>")
 	playsound(src,'sound/weapons/resonator_blast.ogg',25,1)
-	generator.current_fields -= src
+	generator?.current_fields -= src
 	generator = null
 	return ..()
 

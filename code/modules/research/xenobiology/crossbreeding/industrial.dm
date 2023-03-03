@@ -19,7 +19,7 @@ Industrial extracts:
 /obj/item/slimecross/industrial/proc/do_after_spawn(obj/item/spawned)
 	return
 
-/obj/item/slimecross/industrial/Initialize()
+/obj/item/slimecross/industrial/Initialize(mapload)
 	. = ..()
 	create_reagents(100, INJECTABLE | DRAWABLE)
 	START_PROCESSING(SSobj,src)
@@ -175,6 +175,7 @@ Industrial extracts:
 	effect_desc = "Produces IEDs."
 	plasmarequired = 4
 	itempath = /obj/item/grenade/iedcasing
+	dangerous = TRUE
 
 /obj/item/slimecross/industrial/black //What does this have to do with black slimes? No clue! Fun, though
 	colour = "black"

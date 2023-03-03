@@ -6,10 +6,10 @@
 	They are used with the client/screen list and the screen_loc var.
 	For more information, see the byond documentation on the screen_loc and screen vars.
 */
+
 /atom/movable/screen
 	name = ""
 	icon = 'icons/mob/screen_gen.dmi'
-	layer = HUD_LAYER
 	plane = HUD_PLANE
 	animate_movement = SLIDE_STEPS
 	speech_span = SPAN_ROBOT
@@ -44,7 +44,6 @@
 	maptext_width = 480
 
 /atom/movable/screen/swap_hand
-	layer = HUD_LAYER
 	plane = HUD_PLANE
 	name = "swap hand"
 
@@ -99,7 +98,6 @@
 	var/icon_empty // Icon when empty. For now used only by humans.
 	var/icon_full  // Icon when contains an item. For now used only by humans.
 	var/list/object_overlays = list()
-	layer = HUD_LAYER
 	plane = HUD_PLANE
 
 /atom/movable/screen/inventory/Click(location, control, params)
@@ -156,10 +154,8 @@
 		icon_empty = icon_state
 
 	if(hud?.mymob && slot_id && icon_full)
-		if(hud.mymob.get_item_by_slot(slot_id))
-			icon_state = icon_full
-		else
-			icon_state = icon_empty
+		icon_state = hud.mymob.get_item_by_slot(slot_id) ? icon_full : icon_empty
+	return ..()
 
 /atom/movable/screen/inventory/proc/add_overlays()
 	var/mob/user = hud?.mymob
@@ -175,7 +171,7 @@
 	var/image/item_overlay = image(holding)
 	item_overlay.alpha = 92
 
-	if(!user.can_equip(holding, slot_id, TRUE))
+	if(!user.can_equip(holding, slot_id, TRUE, bypass_equip_delay_self = TRUE))
 		item_overlay.color = "#FF0000"
 	else
 		item_overlay.color = "#00ff00"
@@ -188,14 +184,12 @@
 	var/static/mutable_appearance/blocked_overlay = mutable_appearance('icons/mob/screen_gen.dmi', "blocked")
 	var/held_index = 0
 
-/atom/movable/screen/inventory/hand/update_icon()
+/atom/movable/screen/inventory/hand/update_overlays()
 	. = ..()
 
 	if(!handcuff_overlay)
 		var/state = (!(held_index % 2)) ? "markus" : "gabrielle"
 		handcuff_overlay = mutable_appearance('icons/mob/screen_gen.dmi', state)
-
-	cut_overlay(list(handcuff_overlay, blocked_overlay, "hand_active"))
 
 	if(!hud?.mymob)
 		return
@@ -203,15 +197,14 @@
 	if(iscarbon(hud.mymob))
 		var/mob/living/carbon/C = hud.mymob
 		if(C.handcuffed)
-			add_overlay(handcuff_overlay)
+			. += handcuff_overlay
 
 		if(held_index)
 			if(!C.has_hand_for_held_index(held_index))
-				add_overlay(blocked_overlay)
+				. += blocked_overlay
 
 	if(held_index == hud.mymob.active_hand_index)
-		add_overlay("hand_active")
-
+		. += (held_index % 2) ? "lhandactive" : "rhandactive"
 
 /atom/movable/screen/inventory/hand/Click(location, control, params)
 	// At this point in client Click() code we have passed the 1/10 sec check and little else
@@ -236,7 +229,7 @@
 
 /atom/movable/screen/close
 	name = "close"
-	layer = ABOVE_HUD_LAYER
+
 	plane = ABOVE_HUD_PLANE
 	icon_state = "backpack_close"
 
@@ -253,7 +246,6 @@
 	name = "drop"
 	icon = 'icons/mob/screen_midnight.dmi'
 	icon_state = "act_drop"
-	layer = HUD_LAYER
 	plane = HUD_PLANE
 
 /atom/movable/screen/drop/Click()
@@ -269,7 +261,7 @@
 	usr.a_intent_change(INTENT_HOTKEY_RIGHT)
 
 /atom/movable/screen/act_intent/segmented/Click(location, control, params)
-	if(usr.client.prefs.toggles & INTENT_STYLE)
+	if(usr.client.prefs.toggles & PREFTOGGLE_INTENT_STYLE)
 		var/_x = text2num(params2list(params)["icon-x"])
 		var/_y = text2num(params2list(params)["icon-y"])
 
@@ -369,6 +361,7 @@
 			icon_state = "walking"
 		if(MOVE_INTENT_RUN)
 			icon_state = "running"
+	return ..()
 
 /atom/movable/screen/mov_intent/proc/toggle(mob/user)
 	if(isobserver(user))
@@ -390,12 +383,12 @@
 		icon_state = "pull"
 	else
 		icon_state = "pull0"
+	return ..()
 
 /atom/movable/screen/resist
 	name = "resist"
 	icon = 'icons/mob/screen_midnight.dmi'
 	icon_state = "act_resist"
-	layer = HUD_LAYER
 	plane = HUD_PLANE
 
 /atom/movable/screen/resist/Click()
@@ -407,7 +400,6 @@
 	name = "rest"
 	icon = 'icons/mob/screen_midnight.dmi'
 	icon_state = "act_rest"
-	layer = HUD_LAYER
 	plane = HUD_PLANE
 
 /atom/movable/screen/rest/Click()
@@ -424,12 +416,12 @@
 		icon_state = "act_rest"
 	else
 		icon_state = "act_rest0"
+	return ..()
 
 /atom/movable/screen/storage
 	name = "storage"
 	icon_state = "block"
 	screen_loc = "7,7 to 10,8"
-	layer = HUD_LAYER
 	plane = HUD_PLANE
 
 /atom/movable/screen/storage/Initialize(mapload, new_master)
@@ -510,7 +502,7 @@
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	alpha = 128
 	anchored = TRUE
-	layer = ABOVE_HUD_LAYER
+
 	plane = ABOVE_HUD_PLANE
 
 /atom/movable/screen/zone_sel/MouseExited(location, control, params)
@@ -618,6 +610,10 @@
 	icon = 'icons/mob/screen_cyborg.dmi'
 	screen_loc = ui_borg_health
 
+/atom/movable/screen/healths/minebot
+	icon = 'icons/mob/screen_cyborg.dmi'
+	screen_loc = ui_health
+
 /atom/movable/screen/healths/blob
 	name = "blob health"
 	icon_state = "block"
@@ -700,12 +696,15 @@
 	icon = 'icons/blank_title.png'
 	icon_state = ""
 	screen_loc = "1,1"
-	layer = SPLASHSCREEN_LAYER
 	plane = SPLASHSCREEN_PLANE
 	var/client/holder
 
-/atom/movable/screen/splash/New(client/C, visible, use_previous_title) //TODO: Make this use INITIALIZE_IMMEDIATE, except its not easy
+INITIALIZE_IMMEDIATE(/atom/movable/screen/splash)
+
+/atom/movable/screen/splash/Initialize(mapload, client/C, visible, use_previous_title)
 	. = ..()
+	if(!istype(C))
+		return
 
 	holder = C
 
@@ -717,8 +716,7 @@
 			icon = SStitle.icon
 	else
 		if(!SStitle.previous_icon)
-			qdel(src)
-			return
+			return INITIALIZE_HINT_QDEL
 		icon = SStitle.previous_icon
 
 	holder.screen += src

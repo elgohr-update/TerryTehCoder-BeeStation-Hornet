@@ -32,6 +32,7 @@ To add a crossbreed:
 	var/colour = "null"
 	var/effect = "null"
 	var/effect_desc = "null"
+	var/dangerous = FALSE
 	force = 0
 	w_class = WEIGHT_CLASS_TINY
 	throwforce = 0
@@ -43,7 +44,7 @@ To add a crossbreed:
     if(effect_desc)
         . += "<span class='notice'>[effect_desc]</span>"
 
-/obj/item/slimecross/Initialize()
+/obj/item/slimecross/Initialize(mapload)
 	. = ..()
 	name =  effect + " " + colour + " extract"
 	var/itemcolor = "#FFFFFF"
@@ -98,7 +99,7 @@ To add a crossbreed:
 	var/del_on_empty = TRUE
 	var/list/list_reagents
 
-/obj/item/slimecrossbeaker/Initialize()
+/obj/item/slimecrossbeaker/Initialize(mapload)
 	. = ..()
 	create_reagents(50, INJECTABLE | DRAWABLE)
 	if(list_reagents)
@@ -138,7 +139,7 @@ To add a crossbreed:
 	var/ignore_flags = FALSE
 	var/self_use_only = FALSE
 
-/obj/item/slimecrossbeaker/autoinjector/Initialize()
+/obj/item/slimecrossbeaker/autoinjector/Initialize(mapload)
 	. = ..()
 	reagents.flags = DRAWABLE // Cannot be refilled, since it's basically an autoinjector!
 
@@ -182,7 +183,7 @@ To add a crossbreed:
 	color = "#DDAAAA"
 	list_reagents = list(/datum/reagent/pax/peaceborg = 10, /datum/reagent/drug/space_drugs = 15) //Peace, dudes
 
-/obj/item/slimecrossbeaker/autoinjector/peaceandlove/Initialize()
+/obj/item/slimecrossbeaker/autoinjector/peaceandlove/Initialize(mapload)
 	. = ..()
 	reagents.flags = NONE // It won't be *that* easy to get your hands on pax.
 

@@ -129,7 +129,8 @@
 	coretype = text2path("/obj/item/slime_extract/[sanitizedcolour]")
 	regenerate_icons()
 
-/mob/living/simple_animal/slime/proc/update_name()
+/mob/living/simple_animal/slime/update_name()
+	. = ..()
 	if(slime_name_regex.Find(name))
 		number = rand(1, 1000)
 		name = "[colour] [is_adult ? "adult" : "baby"] slime ([number])"
@@ -172,7 +173,6 @@
 		if(health <= 0)
 			mod += 2
 	add_movespeed_modifier(MOVESPEED_ID_SLIME_HEALTHMOD, TRUE, 100, multiplicative_slowdown = mod, override = TRUE)
-	update_health_hud()
 
 /mob/living/simple_animal/slime/update_health_hud()
 	if(hud_used)
@@ -241,7 +241,7 @@
 	return 2
 
 /mob/living/simple_animal/slime/get_stat_tab_status()
-	var/list/tab_data = list()
+	var/list/tab_data = ..()
 	if(!docile)
 		tab_data["Nutrition"] = GENERATE_STAT_TEXT("[nutrition]/[get_max_nutrition()]")
 	if(amount_grown >= SLIME_EVOLUTION_THRESHOLD)
@@ -283,7 +283,7 @@
 			Feedon(Food)
 	return ..()
 
-/mob/living/simple_animal/slime/doUnEquip(obj/item/W, was_thrown = FALSE)
+/mob/living/simple_animal/slime/doUnEquip(obj/item/W, was_thrown = FALSE, silent = FALSE)
 	return
 
 /mob/living/simple_animal/slime/start_pulling(atom/movable/AM, state, force = move_force, supress_message = FALSE)
@@ -401,7 +401,7 @@
 			if(applied >= SLIME_EXTRACT_CROSSING_REQUIRED)
 				to_chat(user, "<span class='notice'>You feed the slime as many of the extracts from the bag as you can, and it mutates!</span>")
 				playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
-				spawn_corecross()
+				spawn_corecross(user)
 				hasOutput = TRUE
 				break
 		if(!hasOutput)
@@ -413,17 +413,25 @@
 		return
 	..()
 
-/mob/living/simple_animal/slime/proc/spawn_corecross()
+/mob/living/simple_animal/slime/proc/spawn_corecross(mob/living/user)
 	var/static/list/crossbreeds = subtypesof(/obj/item/slimecross)
 	visible_message("<span class='danger'>[src] shudders, its mutated core consuming the rest of its body!</span>")
 	playsound(src, 'sound/magic/smoke.ogg', 50, 1)
 	var/crosspath
+	var/crosspath_dangerous = FALSE
+	var/crosspath_name = "crossbred slime extract"
 	for(var/X in crossbreeds)
 		var/obj/item/slimecross/S = X
 		if(initial(S.colour) == colour && initial(S.effect) == effectmod)
 			crosspath = S
+			if(initial(S.dangerous))
+				crosspath_dangerous = TRUE
+			crosspath_name =  initial(S.effect) + " " + initial(S.colour) + " extract"
 			break
 	if(crosspath)
+		log_game("A [crosspath_name] was created at [AREACOORD(src)] by [key_name(user)]")
+		if(crosspath_dangerous)
+			message_admins("A [crosspath_name] was created at [ADMIN_VERBOSEJMP(src)] by [ADMIN_LOOKUPFLW(user)]")
 		new crosspath(loc)
 	else
 		visible_message("<span class='warning'>The mutated core shudders, and collapses into a puddle, unable to maintain its form.</span>")
@@ -441,7 +449,7 @@
 	return
 
 /mob/living/simple_animal/slime/examine(mob/user)
-	. = list("<span class='info'>*---------*\nThis is [icon2html(src, user)] \a <EM>[src]</EM>!")
+	. = list("<span class='info'>This is [icon2html(src, user)] \a <EM>[src]</EM>!")
 	if (stat == DEAD)
 		. += "<span class='deadsay'>It is limp and unresponsive.</span>"
 	else
@@ -468,7 +476,7 @@
 			if(10)
 				. += "<span class='warning'><B>It is radiating with massive levels of electrical activity!</B></span>"
 
-	. += "*---------*</span>"
+	. += "</span>"
 
 /mob/living/simple_animal/slime/proc/discipline_slime(mob/user)
 	if(stat)

@@ -56,7 +56,7 @@
 	priority_announce(thanks_msg, "Cargo shuttle commandeered by CentCom.", SSstation.announcer.get_rand_alert_sound())
 
 	dispatched = 1
-	var/datum/bank_account/D = SSeconomy.get_dep_account(ACCOUNT_CAR)
+	var/datum/bank_account/D = SSeconomy.get_budget_account(ACCOUNT_CAR_ID)
 	if(D)
 		D.adjust_money(bonus_points)
 	endWhen = activeFor + 1
@@ -109,7 +109,7 @@
 		var/list/shuttle_spawns = list()
 		switch(dispatch_type)
 			if(HIJACK_SYNDIE)
-				var/datum/supply_pack/pack = SSshuttle.supply_packs[/datum/supply_pack/emergency/specialops]
+				var/datum/supply_pack/pack = SSsupply.supply_packs[/datum/supply_pack/emergency/specialops]
 				pack.generate(pick_n_take(empty_shuttle_turfs))
 
 				shuttle_spawns.Add(/mob/living/simple_animal/hostile/syndicate/ranged/infiltrator)
@@ -120,7 +120,7 @@
 					shuttle_spawns.Add(/mob/living/simple_animal/hostile/syndicate/ranged/infiltrator)
 
 			if(RUSKY_PARTY)
-				var/datum/supply_pack/pack = SSshuttle.supply_packs[/datum/supply_pack/service/party]
+				var/datum/supply_pack/pack = SSsupply.supply_packs[/datum/supply_pack/service/party]
 				pack.generate(pick_n_take(empty_shuttle_turfs))
 
 				shuttle_spawns.Add(/mob/living/simple_animal/hostile/russian)
@@ -132,7 +132,7 @@
 					shuttle_spawns.Add(/mob/living/simple_animal/hostile/bear/russian)
 
 			if(SPIDER_GIFT)
-				var/datum/supply_pack/pack = SSshuttle.supply_packs[/datum/supply_pack/emergency/specialops]
+				var/datum/supply_pack/pack = SSsupply.supply_packs[/datum/supply_pack/emergency/specialops]
 				pack.generate(pick_n_take(empty_shuttle_turfs))
 
 				shuttle_spawns.Add(/mob/living/simple_animal/hostile/poison/giant_spider)
@@ -180,7 +180,7 @@
 					/datum/supply_pack/medical/supplies
 					)
 				for(var/crate in crate_types)
-					var/datum/supply_pack/pack = SSshuttle.supply_packs[crate]
+					var/datum/supply_pack/pack = SSsupply.supply_packs[crate]
 					pack.generate(pick_n_take(empty_shuttle_turfs))
 
 				for(var/i in 1 to 5)
@@ -192,7 +192,7 @@
 				for(var/i in 1 to 6)
 					shuttle_spawns.Add(pick(prob(5) ? naughtypizza : nicepizza))
 			if(ITS_HIP_TO)
-				var/datum/supply_pack/pack = SSshuttle.supply_packs[/datum/supply_pack/organic/hydroponics/beekeeping_fullkit]
+				var/datum/supply_pack/pack = SSsupply.supply_packs[/datum/supply_pack/organic/hydroponics/beekeeping_fullkit]
 				pack.generate(pick_n_take(empty_shuttle_turfs))
 
 				shuttle_spawns.Add(/obj/effect/mob_spawn/human/corpse/bee_terrorist)
@@ -247,7 +247,7 @@
 	name = "Objectives of a Bee Liberation Front Operative"
 	info = "<b>Objective #1</b>. Liberate all bees on the NT transport vessel 2416/B. <b>Success!</b>  <br><b>Objective #2</b>. Escape alive. <b>Failed.</b>"
 
-/obj/machinery/syndicatebomb/shuttle_loan/Initialize()
+/obj/machinery/syndicatebomb/shuttle_loan/Initialize(mapload)
 	. = ..()
 	setAnchored(TRUE)
 	timer_set = rand(480, 600) //once the supply shuttle docks (after 5 minutes travel time), players have between 3-5 minutes to defuse the bomb

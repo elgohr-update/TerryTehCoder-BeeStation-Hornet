@@ -14,7 +14,7 @@
 	var/turf/listeningTo
 	var/hearing_range = 3
 
-/obj/item/assembly/infra/Initialize()
+/obj/item/assembly/infra/Initialize(mapload)
 	. = ..()
 	beams = list()
 	START_PROCESSING(SSobj, src)
@@ -71,7 +71,7 @@
 	return
 
 /obj/item/assembly/infra/dropped()
-	. = ..()
+	..()
 	if(holder)
 		holder_movement() //sync the dir of the device as well if it's contained in a TTV or an assembly holder
 	else
@@ -105,12 +105,12 @@
 				I.icon_state = "[initial(I.icon_state)]_[(assembly_holder.a_left == src) ? "l":"r"]" //Sync the offset of the beam with the position of the sensor.
 			else if(istype(holder, /obj/item/transfer_valve))
 				I.icon_state = "[initial(I.icon_state)]_ttv"
-			I.density = TRUE
+			I.set_density(TRUE)
 			if(!I.Move(_T))
 				qdel(I)
 				switchListener(_T)
 				break
-			I.density = FALSE
+			I.set_density(FALSE)
 			beams += I
 			I.master = src
 			I.setDir(_dir)
@@ -225,7 +225,7 @@
 	icon_state = "ibeam"
 	anchored = TRUE
 	density = FALSE
-	pass_flags = PASSTABLE|PASSGLASS|PASSGRILLE
+	pass_flags = PASSTABLE|PASSTRANSPARENT|PASSGRILLE
 	pass_flags_self = LETPASSTHROW
 	var/obj/item/assembly/infra/master
 

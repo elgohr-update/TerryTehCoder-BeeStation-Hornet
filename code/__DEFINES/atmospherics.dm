@@ -164,7 +164,7 @@
 #define ATMOS_TANK_AIRMIX			"o2=2644;n2=10580;TEMP=293.15"
 
 //LAVALAND
-#define LAVALAND_EQUIPMENT_EFFECT_PRESSURE 90 //! what pressure you have to be under to increase the effect of equipment meant for lavaland
+#define MAXIMUM_LAVALAND_EQUIPMENT_EFFECT_PRESSURE 90 //! what pressure you have to be under to increase the effect of equipment meant for lavaland
 #define LAVALAND_DEFAULT_ATMOS		"o2=14;n2=5;co2=13;TEMP=300"
 
 //ATMOS MIX IDS
@@ -217,6 +217,14 @@
 #define ATMOS_GAS_MONITOR_OUTPUT_SM "sm_out"
 #define ATMOS_GAS_MONITOR_SENSOR_SM "sm_sense"
 
+#define ATMOS_GAS_MONITOR_INPUT_SM_WASTE "sm_waste_in"
+#define ATMOS_GAS_MONITOR_OUTPUT_SM_WASTE "sm_waste_out"
+#define ATMOS_GAS_MONITOR_SENSOR_SM_WASTE "sm_waste_sense"
+
+#define ATMOS_GAS_MONITOR_INPUT_TOXINS_WASTE "toxins_waste_in"
+#define ATMOS_GAS_MONITOR_OUTPUT_TOXINS_WASTE "toxins_waste_out"
+#define ATMOS_GAS_MONITOR_SENSOR_TOXINS_WASTE "toxins_waste_sense"
+
 //AIRLOCK CONTROLLER TAGS
 
 //RnD toxins burn chamber
@@ -251,8 +259,8 @@
 //MULTIPIPES
 //IF YOU EVER CHANGE THESE CHANGE SPRITES TO MATCH.
 #define PIPING_LAYER_MIN 1
-#define PIPING_LAYER_MAX 3
-#define PIPING_LAYER_DEFAULT 2
+#define PIPING_LAYER_MAX 5
+#define PIPING_LAYER_DEFAULT 3
 #define PIPING_LAYER_P_X 5
 #define PIPING_LAYER_P_Y 5
 #define PIPING_LAYER_LCHANGE 0.05
@@ -275,7 +283,6 @@
 #define GAS_BZ					"bz"
 #define GAS_STIMULUM			"stim"
 #define GAS_PLUOXIUM			"pluox"
-#define GAS_MIASMA				"miasma"
 
 #define GAS_FLAG_DANGEROUS		(1<<0)
 #define GAS_FLAG_BREATH_PROC	(1<<1)
@@ -287,6 +294,14 @@
 	}																		\
 	if(T.dir & (EAST|WEST)) {										\
 		T.pixel_y = (PipingLayer - PIPING_LAYER_DEFAULT) * PIPING_LAYER_P_Y;\
+	}
+
+#define PIPING_FORWARD_SHIFT(T, PipingLayer, more_shift) \
+	if(T.dir & (NORTH|SOUTH)) {									\
+		T.pixel_y += more_shift * (PipingLayer - PIPING_LAYER_DEFAULT);\
+	}																		\
+	if(T.dir & (EAST|WEST)) {										\
+		T.pixel_x += more_shift * (PipingLayer - PIPING_LAYER_DEFAULT);\
 	}
 
 #define PIPING_LAYER_DOUBLE_SHIFT(T, PipingLayer) \
@@ -315,11 +330,14 @@ GLOBAL_LIST_INIT(pipe_paint_colors, sortList(list(
 		"yellow" = rgb(255,198,0)
 )))
 
-//ROT MIASMA
-#define MIASMA_CORPSE_MOLES 0.02
-#define MIASMA_GIBS_MOLES 0.005
-
 //PIPENET UPDATE STATUS
 #define PIPENET_UPDATE_STATUS_DORMANT 0
 #define PIPENET_UPDATE_STATUS_REACT_NEEDED 1
 #define PIPENET_UPDATE_STATUS_RECONCILE_NEEDED 2
+
+// GAS MIXTURE STUFF (used to be in code/modules/atmospherics/gasmixtures/gas_mixture.dm)
+#define MINIMUM_HEAT_CAPACITY	0.0003
+#define MINIMUM_MOLE_COUNT		0.01
+/*I feel the need to document what happens here. Basically this is used to catch most rounding errors, however it's previous value made it so that
+once gases got hot enough, most procedures wouldnt occur due to the fact that the mole counts would get rounded away. Thus, we lowered it a few orders of magnititude */
+#define QUANTIZE(variable)		(round(variable,0.0000001))

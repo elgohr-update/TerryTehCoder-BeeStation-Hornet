@@ -24,7 +24,9 @@
 	max_stages = 5
 	spread_text = "Unknown"
 	viable_mobtypes = list(/mob/living/carbon/human, /mob/living/carbon/monkey, /mob/living/carbon/monkey/tumor)
-
+	
+	/// last player to modify the disease. 
+	var/last_modified_by = "no CKEY"
 	var/resistance
 	var/stealth
 	var/stage_rate
@@ -36,7 +38,6 @@
 	var/processing = FALSE
 	var/mutable = TRUE //set to FALSE to prevent most in-game methods of altering the disease via virology
 	var/oldres
-	var/sentient = FALSE //used to classify if a disease is sentient
 	var/faltered = FALSE //used if a disease has been made non-contagious
 	// The order goes from easy to cure to hard to cure.
 	var/mutability = 1
@@ -74,6 +75,10 @@
 			S.End(src)
 	return ..()
 
+/**
+* add the disease with no checks
+* Don't use this proc. use ForceContractDisease on mob/living/carbon instead
+*/
 /datum/disease/advance/try_infect(mob/living/infectee, make_copy = TRUE)
 	//see if we are more transmittable than enough diseases to replace them
 	//diseases replaced in this way do not confer immunity
@@ -81,13 +86,11 @@
 	var/channel = CheckChannel() //we do this because this can break otherwise, for some obscure reason i cannot fathom
 	for(var/datum/disease/advance/P in infectee.diseases)
 		var/otherchannel = P.CheckChannel()
-		if(sentient)
-			if(P.sentient)
-				advance_diseases += P
-			continue
 		if(dormant || P.dormant)//dormant diseases dont interfere with channels, not even with other dormant diseases if you manage to get two
 			continue
-		if((IsSame(P) || channel == otherchannel) && !P.sentient)
+		if(IsSame(P))
+			continue
+		if(channel == otherchannel)
 			advance_diseases += P
 	var/replace_num = advance_diseases.len + 1 - DISEASE_LIMIT //amount of diseases that need to be removed to fit this one
 	if(replace_num > 0)
@@ -170,7 +173,8 @@
 	var/list/name_symptoms = list()
 	for(var/datum/symptom/S in symptoms)
 		name_symptoms += S.name
-	return "[name] sym:[english_list(name_symptoms)] r:[resistance] s:[stealth] ss:[stage_rate] t:[transmission]"
+		
+	return "[name], last modified by: [last_modified_by] symptoms:[english_list(name_symptoms)] resistance:[resistance] stealth:[stealth] speed:[stage_rate] transmission:[transmission] faltered:[faltered ? "Yes" : "No"]"
 
 /*
 
@@ -272,8 +276,7 @@
 	else
 		visibility_flags &= ~HIDDEN_SCANNER
 
-	SetSpread(CLAMP(2 ** (transmission - symptoms.len), DISEASE_SPREAD_BLOOD, DISEASE_SPREAD_AIRBORNE))
-
+	SetSpread()
 	permeability_mod = max(CEILING(0.4 * transmission, 1), 1)
 	cure_chance = 15 - CLAMP(resistance, -5, 5) // can be between 10 and 20
 	stage_prob = max(stage_rate, 2)
@@ -283,7 +286,7 @@
 
 
 // Assign the spread type and give it the correct description.
-/datum/disease/advance/proc/SetSpread(spread_id)
+/datum/disease/advance/proc/SetSpread()
 	if(faltered)
 		spread_flags = DISEASE_SPREAD_FALTERED
 		spread_text = "Intentional Injection"
@@ -291,25 +294,16 @@
 		spread_flags = DISEASE_SPREAD_NON_CONTAGIOUS
 		spread_text = "None"
 	else
-		switch(spread_id)
-			if(DISEASE_SPREAD_NON_CONTAGIOUS)
-				spread_flags = DISEASE_SPREAD_NON_CONTAGIOUS
-				spread_text = "None"
-			if(DISEASE_SPREAD_SPECIAL)
-				spread_flags = DISEASE_SPREAD_SPECIAL
-				spread_text = "None"
-			if(DISEASE_SPREAD_BLOOD)
+		switch(transmission)
+			if(-INFINITY to 5)
 				spread_flags = DISEASE_SPREAD_BLOOD
 				spread_text = "Blood"
-			if(DISEASE_SPREAD_CONTACT_FLUIDS)
+			if(6 to 10)
 				spread_flags = DISEASE_SPREAD_BLOOD | DISEASE_SPREAD_CONTACT_FLUIDS
 				spread_text = "Fluids"
-			if(DISEASE_SPREAD_CONTACT_SKIN)
+			if(11 to INFINITY)
 				spread_flags = DISEASE_SPREAD_BLOOD | DISEASE_SPREAD_CONTACT_FLUIDS | DISEASE_SPREAD_CONTACT_SKIN
 				spread_text = "On contact"
-			if(DISEASE_SPREAD_AIRBORNE)
-				spread_flags = DISEASE_SPREAD_BLOOD | DISEASE_SPREAD_CONTACT_FLUIDS | DISEASE_SPREAD_CONTACT_SKIN | DISEASE_SPREAD_AIRBORNE
-				spread_text = "Airborne"
 
 /datum/disease/advance/proc/SetDanger(level_sev)
 	switch(level_sev)
@@ -550,11 +544,11 @@
 	var/datum/disease/advance/A = make_copy ? Copy() : src
 	if(!initial && A.mutable && (spread_flags & DISEASE_SPREAD_CONTACT_FLUIDS))
 		var/minimum = 1
-		if(prob(CLAMP(35-(A.resistance + A.stealth), 0, 50) * (A.mutability)))//stealthy/resistant diseases are less likely to mutate. this means diseases used to farm mutations should be easier to cure. hypothetically.
+		if(prob(CLAMP(35-(A.resistance + A.stealth - A.speed), 0, 50) * (A.mutability)))//stealthy/resistant diseases are less likely to mutate. this means diseases used to farm mutations should be easier to cure. hypothetically.
 			if(infectee.job == "clown" || infectee.job == "mime" || prob(1))//infecting a clown or mime can evolve l0 symptoms/. they can also appear very rarely
 				minimum = 0
 			else
-				minimum = CLAMP(A.severity - 3, 1, 6)
+				minimum = CLAMP(A.severity - 1, 1, 7)
 			A.Evolve(minimum, CLAMP(A.severity + 4, minimum, 9))
 			A.id = GetDiseaseID()
 			A.keepid = TRUE//this is really janky, but basically mutated diseases count as the original disease
@@ -579,7 +573,7 @@
 /datum/disease/advance/proc/random_disease_name(var/atom/diseasesource)//generates a name for a disease depending on its symptoms and where it comes from
 	var/list/prefixes = list("Spacer's ", "Space ", "Infectious ","Viral ", "The ", "[pick(GLOB.first_names)]'s ", "[pick(GLOB.last_names)]'s ", "Acute ")//prefixes that arent tacked to the body need spaces after the word
 	var/list/bodies = list(pick("[pick(GLOB.first_names)]", "[pick(GLOB.last_names)]"), "Space", "Disease", "Noun", "Cold", "Germ", "Virus")
-	var/list/suffixes = list("ism", "itis", "osis", "itosis", " #[rand(1,10000)]", "-[rand(1,100)]", "s", "y", " ovirus", " Bug", " Infection", " Disease", " Complex", " Syndrome", " Sickness") //suffixes that arent tacked directly on need spaces before the word
+	var/list/suffixes = list("ism", "itis", "osis", "itosis", " #[rand(1,10000)]", "-[rand(1,100)]", "s", "y", "ovirus", " Bug", " Infection", " Disease", " Complex", " Syndrome", " Sickness") //suffixes that arent tacked directly on need spaces before the word
 	if(stealth >=2)
 		prefixes += "Crypto "
 	switch(max(resistance - (symptoms.len / 2), 1))
@@ -668,3 +662,13 @@
 			return "[pick(prefixes)][pick(bodies)][pick(suffixes)]"
 		if(3)
 			return "[pick(bodies)][pick(suffixes)]"
+
+/datum/disease/advance/proc/logchanges(datum/reagents/holder, var/modification_type)
+	if(holder?.my_atom?.fingerprintslast)
+		last_modified_by = holder.my_atom.fingerprintslast
+	else
+		message_admins("[name], a disease, has been modified ([modification_type]) without logging a CKEY. Please report this to coders")
+		log_virus("[name], a disease, has been modified ([modification_type]) without logging a CKEY. Please report this to coders")
+		// if someone finds a way to avoid being logged while modifiying a virus, admins should be notified so coders can be notified.
+		return FALSE
+	log_virus("[modification_type]: [admin_details()]")

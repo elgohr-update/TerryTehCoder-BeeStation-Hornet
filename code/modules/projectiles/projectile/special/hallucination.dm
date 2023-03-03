@@ -28,7 +28,7 @@
 		hal_target.client.images += fake_icon
 
 /obj/item/projectile/hallucination/Destroy()
-	if(hal_target.client)
+	if(hal_target?.client)
 		hal_target.client.images -= fake_icon
 	QDEL_NULL(fake_icon)
 	return ..()
@@ -148,7 +148,7 @@
 	hal_impact_effect_wall = "impact_laser_wall"
 	hit_duration = 4
 	hit_duration_wall = 10
-	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
+	pass_flags = PASSTABLE | PASSTRANSPARENT | PASSGRILLE
 
 /obj/item/projectile/hallucination/laser/hal_apply_effect()
 	hal_target.adjustStaminaLoss(20)
@@ -168,7 +168,7 @@
 /obj/item/projectile/hallucination/taser/hal_apply_effect()
 	hal_target.Paralyze(100)
 	hal_target.stuttering += 20
-	if(hal_target.dna && hal_target.dna.check_mutation(HULK))
+	if(hal_target.has_dna() && hal_target.dna.check_mutation(HULK))
 		hal_target.say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!" ), forced = "hulk")
 	else if((hal_target.status_flags & CANKNOCKDOWN) && !HAS_TRAIT(hal_target, TRAIT_STUNIMMUNE))
 		addtimer(CALLBACK(hal_target, /mob/living/carbon.proc/do_jitter_animation, 20), 5)
@@ -184,7 +184,7 @@
 	hal_impact_effect = "impact_laser_blue"
 	hal_impact_effect_wall = null
 	hit_duration = 4
-	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
+	pass_flags = PASSTABLE | PASSTRANSPARENT | PASSGRILLE
 
 /obj/item/projectile/hallucination/disabler/hal_apply_effect()
 	hal_target.adjustStaminaLoss(25)

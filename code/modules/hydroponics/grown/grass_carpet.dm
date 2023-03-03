@@ -15,7 +15,7 @@
 	icon_grow = "grass-grow"
 	icon_dead = "grass-dead"
 	genes = list(/datum/plant_gene/trait/repeated_harvest)
-	mutatelist = list(/obj/item/seeds/grass/carpet, /obj/item/seeds/grass/fairy)
+	mutatelist = list(/obj/item/seeds/grass/carpet, /obj/item/seeds/grass/fairy, /obj/item/seeds/grass/shamrock)
 	reagents_add = list(/datum/reagent/consumable/nutriment = 0.02, /datum/reagent/hydrogen = 0.05)
 
 /obj/item/reagent_containers/food/snacks/grown/grass
@@ -49,7 +49,6 @@
 	plantname = "Fairygrass"
 	product = /obj/item/reagent_containers/food/snacks/grown/grass/fairy
 	icon_grow = "fairygrass-grow"
-	icon_dead = "grass-dead"
 	genes = list(/datum/plant_gene/trait/repeated_harvest, /datum/plant_gene/trait/glow/blue)
 	reagents_add = list(/datum/reagent/consumable/nutriment = 0.02, /datum/reagent/hydrogen = 0.05, /datum/reagent/drug/space_drugs = 0.15)
 
@@ -60,6 +59,7 @@
 	icon_state = "fairygrassclump"
 	filling_color = "#3399ff"
 	stacktype = /obj/item/stack/tile/fairygrass
+	discovery_points = 300
 
 /obj/item/reagent_containers/food/snacks/grown/grass/fairy/attack_self(mob/user)
 	var/datum/plant_gene/trait/glow/G = null
@@ -95,7 +95,7 @@
 	name = "pack of carpet seeds"
 	desc = "These seeds grow into stylish carpet samples."
 	icon_state = "seed-carpet"
-	species = /datum/reagent/carpet
+	species = "carpet"
 	plantname = "Carpet"
 	product = /obj/item/reagent_containers/food/snacks/grown/grass/carpet
 	mutatelist = list()
@@ -108,3 +108,35 @@
 	icon_state = "carpetclump"
 	stacktype = /obj/item/stack/tile/carpet
 	can_distill = FALSE
+
+// shamrocks
+/obj/item/seeds/grass/shamrock
+	name = "pack of shamrock seeds"
+	desc = "These seeds grow into shamrock producing plants."
+	icon_state = "seed-shamrock"
+	species = "shamrock"
+	plantname = "Shamrock Plants"
+	product = /obj/item/reagent_containers/food/snacks/grown/grass/shamrock
+	mutatelist = list()
+	rarity = 10
+	genes = list(/datum/plant_gene/trait/repeated_harvest)
+	reagents_add = list(/datum/reagent/nitrogen = 0.1, /datum/reagent/consumable/nutriment = 0.02)
+
+/obj/item/reagent_containers/food/snacks/grown/grass/shamrock
+	seed = /obj/item/seeds/grass/shamrock
+	name = "shamrock"
+	desc = "Luck of the irish."
+	icon_state = "shamrock"
+	slot_flags = ITEM_SLOT_HEAD
+	filling_color = "#245c39"
+	bitesize_mod = 3
+	can_distill = FALSE
+
+//clover
+/obj/item/reagent_containers/food/snacks/grown/grass/shamrock/Initialize(mapload, /obj/item/seeds/new_seed)
+	. = ..()
+	if(prob(0.001)) // 0.001% chance to be a clover
+		name = "four leafed clover"
+		desc = "A rare sought after trinket said to grant luck to it's holder."
+		icon_state = "clover"
+		filling_color = "#358a55"
